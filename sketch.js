@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-const serviceUuid = '00002220-0000-1000-8000-00805f9b34fb';
+let serviceUuid = '00002220-0000-1000-8000-00805f9b34fb';
 
 let writeCharacteristic,notifyCharacteristic;
 let myValue = 0;
@@ -65,6 +65,7 @@ function preload(){
     
     logo = loadImage("assets/logo.png");
     gif = loadImage("assets/back.gif");
+    frisson_img = loadImage("assets/frisson.png");
 }
 
 function setup() {
@@ -187,14 +188,14 @@ function firstPage(i){
 function secondPage(i){
     if(!i) return ;
     
-    background(bcolor);
+    background(gif);
     stroke(r, g, b);
    fill(r, g, b, 127);
    ellipse(windowWidth / 2, windowHeight / 2, 200, 200);
 
    //strokeWidth(2);
    stroke(0, 0, 0);
-   fill(0, 102, 153);
+   fill(r, g, b);
    pageCount = 2;
    visible = true
     
@@ -220,6 +221,13 @@ function secondPage(i){
     tlP[3] = M1_Stop * 10;
     
     timerArray = Timings.split(",").filter(x => x.trim().length && !isNaN(x)).map(Number);
+    
+    
+    image(logo,10,10,240,50);
+    
+    image(frisson_img,windowWidth/2 - 500,windowHeight/2 - 250);
+    frisson_img.resize(0,500);
+    
     
 }
 
