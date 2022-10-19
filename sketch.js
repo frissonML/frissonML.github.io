@@ -47,7 +47,7 @@ var P3_Strength = 0
 var M1_Strength = 100
 
 // gui
-var visible = false;
+var visible = true;
 var gui, gui2;
 
 
@@ -60,6 +60,21 @@ var timerArray = [] ;
 var timerIndex = 0 ;
 
 var gif,pg;
+
+
+
+let playing = false;
+let videoLoaded = false;
+let vidSizeH = 1080 ;
+let vidSizeV = 720 ;
+let input;
+
+var vidDuration = 0;
+
+
+const socket = new WebSocket('ws://localhost:8766');
+
+let sockOpen = false
 
 function preload(){
     
@@ -99,7 +114,10 @@ function setup() {
   textSize(32);
   stroke(r, g, b);
   fill(0, 0, 0, 127);
-    
+
+  pg = createGraphics(600, 200);
+  input = createFileInput(handleFile);
+  input.position(100, 100);
 
 //  textAlign(CENTER, CENTER);
 
@@ -118,7 +136,7 @@ function draw() {
     if(isConnected) secondPage(true);
     else firstPage(true);
     
-    if(visible){
+    if(isConnected && visible){
         gui.show();
         gui2.show();
     }  else {
@@ -151,6 +169,7 @@ function mousePressed() {
     connectToBle();
     }
     else{ 
+        
         if(!timerStart){
             intervalId = setInterval(timeIt, 1000);
             timerStart = true
@@ -197,13 +216,14 @@ function secondPage(i){
    stroke(0, 0, 0);
    fill(r, g, b);
    pageCount = 2;
-   visible = true
     
-   if(timerStart){
+   if(timerStart && !videoLoaded){
     text(timerIndex,windowWidth / 2 - 20, windowHeight / 2 + 5);}
    else{
     text("Start",windowWidth / 2 - 40, windowHeight / 2 + 5);
-   }      
+   }   
+
+  
     
     vals[0] = P1_Strength;
     vals[1] = P2_Strength;
@@ -225,10 +245,27 @@ function secondPage(i){
     
     image(logo,10,10,240,50);
     
-    image(frisson_img,windowWidth/2 - 500,windowHeight/2 - 250);
-    frisson_img.resize(0,500);
+    if(visible)
+        {
+            image(frisson_img,windowWidth/2 - 500,windowHeight/2 - 250);
+            frisson_img.resize(0,500);
+        }
     
     
+}
+
+
+function handleFile(file) {
+ 
+  if (file.type === 'video') {
+   vid = createVideo(file.data, 'mp4');
+   vid.position((windowWidth - vidSizeH )/2,(windowHeight - vidSizeV + 200)/2);
+   vid.size(vidSizeH,AUTO);
+   videoLoaded = true ;
+   //setButtons();
+  } else {
+    vid = null;
+  }
 }
 
 
@@ -236,6 +273,7 @@ function timeIt() {
   if (timerIndex < Stimulus_Duration) {
       timerIndex++ ;
     if(timerArray.includes(timerIndex)){
+        console.log("Sending");
         writeToBle();
     }
   }
@@ -281,7 +319,6 @@ function typeWriter(sentence, n, x, y, speed) {
 function connectToBle() {
   // Connect to a device by passing the service UUID
   myBLE.connect(serviceUuid, gotCharacteristics);
-  
 }
 
 // A function that will be called once got characteristics
@@ -298,17 +335,6 @@ function gotCharacteristics(error, characteristics) {
   //myBLE.startNotifications(notifyCharacteristic, handleNotifications, 'int16');
 }
 
-
-function keyPressed() {
-  switch(key) {
-    case 'p':
-      if(isConnected){
-          writeToBle();
-      }
-      break;
-  }
-}
-
 function writeToBle() {
 
 if(isConnected){
@@ -317,6 +343,7 @@ if(isConnected){
   try{
     console.log(sendDataPacket)
     writeCharacteristic.writeValue(sendDataPacket);
+    socket.send('Frisson_Trigger');
   }
   catch(err){
     isConnected = 0;
@@ -327,3 +354,67 @@ if(isConnected){
 function uint16(v) {
   return v & 0xFFFF;
 }
+
+
+function keyPressed() {
+  switch(key) {
+    case 'p':
+      if(isConnected){
+          writeToBle();
+      }
+    break;
+    case ' ':
+      socket.send('Stimulus_Start');
+      videoTrigger();
+    break;
+      
+  }
+}
+
+function videoTrigger() {
+    vidDuration = vid.time();
+      vidDuration = vid.duration();
+    
+    Stimulus_Duration = parseInt(vidDuration);
+    console.log(Stimulus_Duration);
+    
+    if(videoLoaded && !playing){
+        vid.play();
+        visible = false;
+        intervalId = setInterval(timeIt, 1000);
+        timerStart = true
+        vid.onended(onVidFinish);
+      }
+      else if(playing){
+          vid.pause();
+          visible = true;
+          clearInterval(intervalId);
+          timerStart = false
+      }
+      playing = !playing ;
+    
+
+}
+
+function onVidFinish() {
+
+  socket.send('Stimulus_End');
+  visible = true;
+  clearInterval(intervalId);
+  timerStart = false
+  timerIndex = 0;
+  
+}
+
+socket.addEventListener('open', function (event) {
+    //socket.send('Hello');
+});
+
+// Listen for messages
+socket.addEventListener('message', function (event) {
+
+    console.log('Message from server ', event.data);
+
+});
+
+
