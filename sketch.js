@@ -358,16 +358,15 @@ function uint16(v) {
 
 function keyPressed() {
   switch(key) {
-    case 'p':
+    case 'q':
       if(isConnected){
           writeToBle();
       }
     break;
-    case ' ':
+    case 'm':
       socket.send('Stimulus_Start');
       videoTrigger();
-    break;
-      
+    break;    
   }
 }
 
