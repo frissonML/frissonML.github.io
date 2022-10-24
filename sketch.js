@@ -39,11 +39,11 @@ var M1_Start = 2.5
 var M1_Stop = 3.0
 
 var Stimulus_Duration = 60
-var Timings = 'set here (e.g. 1,5,7)'
+var Timings = 'set here (e.g. ta,tb,tc,6)'
 
-var P1_Strength = 0
-var P2_Strength = 0
-var P3_Strength = 0
+var P1_Strength = 255
+var P2_Strength = 255
+var P3_Strength = 255
 var M1_Strength = 100
 
 // gui
@@ -343,7 +343,7 @@ if(isConnected){
   try{
     console.log(sendDataPacket)
     writeCharacteristic.writeValue(sendDataPacket);
-    socket.send('Frisson_Trigger');
+    socket.send('FW_Frisson_Trigger');
   }
   catch(err){
     isConnected = 0;
@@ -358,21 +358,24 @@ function uint16(v) {
 
 function keyPressed() {
   switch(key) {
-    case 'q':
+    case 'p':
       if(isConnected){
           writeToBle();
       }
     break;
     case 'm':
-      socket.send('Stimulus_Start');
       videoTrigger();
-    break;    
+    break;
+    case 'r':
+      reset_video();
+    break;
+      
   }
 }
 
 function videoTrigger() {
     vidDuration = vid.time();
-      vidDuration = vid.duration();
+    vidDuration = vid.duration();
     
     Stimulus_Duration = parseInt(vidDuration);
     console.log(Stimulus_Duration);
@@ -383,21 +386,32 @@ function videoTrigger() {
         intervalId = setInterval(timeIt, 1000);
         timerStart = true
         vid.onended(onVidFinish);
+        socket.send('FW_Stimulus_Start');
       }
-      else if(playing){
+    else if(playing){
           vid.pause();
           visible = true;
           clearInterval(intervalId);
           timerStart = false
       }
+     
       playing = !playing ;
-    
+      
 
+}
+
+function reset_video() {
+  vid.stop();
+  clearInterval(intervalId);
+  timerStart = false;
+  playing = false;
+  timerIndex = 0;
+  socket.send('FW_Stimulus_Reset');
 }
 
 function onVidFinish() {
 
-  socket.send('Stimulus_End');
+  socket.send('FW_Stimulus_End');
   visible = true;
   clearInterval(intervalId);
   timerStart = false
@@ -406,7 +420,7 @@ function onVidFinish() {
 }
 
 socket.addEventListener('open', function (event) {
-    //socket.send('Hello');
+    socket.send('FW_Frisson_Hello');
 });
 
 // Listen for messages
@@ -414,6 +428,18 @@ socket.addEventListener('message', function (event) {
 
     console.log('Message from server ', event.data);
 
+    if(event.data == "start_stimulus"){
+        console.log("starting");
+        videoTrigger();
+    }
+    else if(event.data == "reset_stimulus"){
+        console.log("reset");
+        reset_video();
+    }
+    else if(event.data == "trigger_device"){
+        console.log("trigger");
+        writeToBle();
+    }
 });
 
 
