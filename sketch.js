@@ -387,12 +387,16 @@ function videoTrigger() {
         timerStart = true
         vid.onended(onVidFinish);
         socket.send('FW_Stimulus_Start');
+        vid.position(0,0);
+        vid.size(windowWidth,AUTO);
       }
     else if(playing){
           vid.pause();
           visible = true;
           clearInterval(intervalId);
-          timerStart = false
+          timerStart = false;
+        vid.position((windowWidth - vidSizeH )/2,(windowHeight - vidSizeV + 200)/2);
+        vid.size(vidSizeH,AUTO);
       }
      
       playing = !playing ;
@@ -407,6 +411,8 @@ function reset_video() {
   playing = false;
   timerIndex = 0;
   socket.send('FW_Stimulus_Reset');
+  vid.position((windowWidth - vidSizeH )/2,(windowHeight - vidSizeV + 200)/2);
+  vid.size(vidSizeH,AUTO);
 }
 
 function onVidFinish() {
@@ -416,6 +422,8 @@ function onVidFinish() {
   clearInterval(intervalId);
   timerStart = false
   timerIndex = 0;
+   vid.position((windowWidth - vidSizeH )/2,(windowHeight - vidSizeV + 200)/2);
+   vid.size(vidSizeH,AUTO);
   
 }
 
