@@ -1,9 +1,9 @@
-// Copyright (c) 2018 p5ble
+// Copyright (c) 2023 MIT
 //
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-let serviceUuid = '00002220-0000-1000-8000-00805f9b34fb';
+const serviceUuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
 
 let writeCharacteristic,notifyCharacteristic;
 let myValue = 0;
@@ -12,9 +12,15 @@ let myBLE;
 var isConnected = 0;
 var writeArr = new Uint8Array([20, 0, 0, 0]);
 
+var elements = 4;
+
 var vals = new Uint8Array([0, 0, 0, 255]);
 var tsP = new Uint8Array([0, 10, 20, 25]);
 var tlP = new Uint8Array([10, 20, 30, 30]);
+
+// Location/Index of elements 20 - Pelter, 30 - Motor, 50 - Led
+var actionP = new Uint8Array([20, 20, 20, 30]);
+var locP = new Uint8Array([1, 3, 4, 1]);
 
 var strength = 0 ;
 
@@ -44,7 +50,7 @@ var Timings = 'set here (e.g. ta,tb,tc,6)'
 var P1_Strength = 255
 var P2_Strength = 255
 var P3_Strength = 255
-var M1_Strength = 100
+var M1_Strength = 30
 
 // gui
 var visible = true;
@@ -325,7 +331,7 @@ function connectToBle() {
 function gotCharacteristics(error, characteristics) {
   if (error) console.log('error: ', error);
   console.log('characteristics: ', characteristics);
-  writeCharacteristic = characteristics[1];
+  writeCharacteristic = characteristics[0];
   // notifyCharacteristic = characteristics[1];
   // myBLE.startNotifications(notifyCharacteristic, handleNotifications,'custom');
   isConnected = 1;
@@ -335,7 +341,65 @@ function gotCharacteristics(error, characteristics) {
   //myBLE.startNotifications(notifyCharacteristic, handleNotifications, 'int16');
 }
 
+
+
+var timeIndex = 0
+var elementIndex = 0
+
+var ble_action = 0
+var ble_time = 0
+var ble_index = 0
+var ble_strength = 0
+
 function writeToBle() {
+timeIndex = 0;
+let myVar = setInterval(function(){elementTimer();}, 100);
+
+
+var elementTimer = function(){
+    for (let i = 0; i < elements; i++) {
+      if(tsP[i] == timeIndex){
+        ble_action = actionP[i];
+        ble_index = locP[i];
+        ble_time = tlP[i] - tsP[i];
+        ble_strength = vals[i];
+        sendBLEPacket();
+        elementIndex  = elementIndex + 1;
+      }
+    }
+
+    timeIndex = timeIndex + 1;
+
+    if(elementIndex == elements){
+      elementIndex = 0 ;
+      timeIndex = 0;
+      clearInterval(myVar); 
+
+    } 
+  }
+
+}
+
+function sendBLEPacket(){
+
+  if(isConnected){
+    var sendDataPacket = new Uint8Array([ble_action,ble_index, ble_time, ble_strength]);
+
+    try{
+      console.log(sendDataPacket)
+      writeCharacteristic.writeValue(sendDataPacket);
+      if(elementIndex == 0){
+        socket.send('FW_Frisson_Trigger');
+      }
+    }
+    catch(err){
+      isConnected = 0;
+    }
+  }
+
+}
+
+function bak_writeToBle() {
 
 if(isConnected){
   var sendDataPacket = new Uint8Array([20,...vals, ...tsP, ...tlP]);
