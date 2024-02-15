@@ -239,7 +239,8 @@ function parseDB(){
     
   for(let i = 0; i < video_ids.length; i++) {
 
-     vid_imgs.push(loadImage("http://cors-anywhere.herokuapp.com/http://img.youtube.com/vi/" + video_ids[i] + "/0.jpg"));
+     //vid_imgs.push(loadImage("http://cors-anywhere.herokuapp.com/http://img.youtube.com/vi/" + video_ids[i] + "/0.jpg"));
+      vid_imgs.push(loadImage("http://img.youtube.com/vi/" + video_ids[i] + "/0.jpg"));
   }
     isDBLoaded = true;
 }
