@@ -539,7 +539,7 @@ function timeIt() {
       timerIndex++ ;
     if(timerArray.includes(timerIndex)){
         console.log("Sending");
-        //writeToBle();
+        writeToBle();
     }
   }
   else{
