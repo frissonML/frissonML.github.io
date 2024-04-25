@@ -3,7 +3,14 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-const serviceUuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
+// const serviceUuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
+
+const serviceUuid =  {
+         filters: [{ services: ["00002220-0000-1000-8000-00805f9b34fb","6E400001-B5A3-F393-E0A9-E50E24DCCA9E"] }]
+       };
+
+var isRFDuino = 0;
+var isNRF = 0;
 
 let writeCharacteristic,notifyCharacteristic;
 let myValue = 0;
@@ -192,8 +199,6 @@ function mousePressed() {
 
 function firstPage(i){
     if(i){
-        
-    
        stroke(r, g, b);
        fill(r, g, b, 127);
        ellipse(windowWidth / 2, windowHeight / 2, 200, 200);
@@ -280,7 +285,8 @@ function timeIt() {
       timerIndex++ ;
     if(timerArray.includes(timerIndex)){
         console.log("Sending");
-        writeToBle();
+        if(isRFDuino) writeToBleRFDuino();
+        else if(isNRF) writeToBleNRF();
     }
   }
   else{
@@ -331,7 +337,17 @@ function connectToBle() {
 function gotCharacteristics(error, characteristics) {
   if (error) console.log('error: ', error);
   console.log('characteristics: ', characteristics);
-  writeCharacteristic = characteristics[0];
+
+  if(characteristics[0] == "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"){
+      writeCharacteristic = characteristics[0];
+      isNRF = 1;
+      console.log = ("NRF Connected");
+  }
+  else{
+      writeCharacteristic = characteristics[1];
+      isRFDuino = 1;
+  }
+    
   // notifyCharacteristic = characteristics[1];
   // myBLE.startNotifications(notifyCharacteristic, handleNotifications,'custom');
   isConnected = 1;
@@ -351,7 +367,7 @@ var ble_time = 0
 var ble_index = 0
 var ble_strength = 0
 
-function writeToBle() {
+function writeToBleNRF() {
 timeIndex = 0;
 let myVar = setInterval(function(){elementTimer();}, 100);
 
@@ -399,7 +415,7 @@ function sendBLEPacket(){
 
 }
 
-function bak_writeToBle() {
+function writeToBleRFDuino() {
 
 if(isConnected){
   var sendDataPacket = new Uint8Array([20,...vals, ...tsP, ...tlP]);
